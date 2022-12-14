@@ -14,7 +14,6 @@ $symbol = 'BTC/USDT';
 $low = 10000;
 $high = 100000;
 $count_of_orders = 180;
-$deal_amount = 0.02;
 list($base_asset, $quote_asset) = explode('/', $symbol);
 
 $bot = new Ccxt($exchange, $api_public, $api_secret);
@@ -62,104 +61,57 @@ $balances = [
 $price = 15000;
 
 // [START] BUY POSITIONS
-$count_real_orders_buy = \Src\Math::incrementNumber($balances[$quote_asset]['total'] / ($deal_amount * $price), 1);
-$grid_buys = array_filter($grid, fn($g) => $g < $price);
-$open_order_buys = array_filter($open_orders, fn($open_order) => $open_order['side'] == 'buy' && $open_order['status'] == 'open');
-uasort($open_order_buys, fn($a, $b) => $b['price'] <=> $a['price']);
+$grid_buys = $halving->getGridBuy($grid, $price);
+$balance_total = $balances[$quote_asset]['total'];
+$count_real_orders_buy = count($grid_buys);
+$deal_amount_buy = $halving->getDealAmountBuy($balance_total, $count_real_orders_buy, $price);
+$open_order_buys = $halving->getOpenOrderBuys($open_orders);
 
-foreach ($open_order_buys as $key => $open_order_buy) {
-    $is_in_grid = false;
-    foreach ($grid_buys as $grid_buy) {
-        if (\Src\Math::compareFloats($open_order_buy['price'], $grid_buy)) {
-            $is_in_grid = true;
-            break;
-        }
-    }
-    if (!$is_in_grid) {
-        // cancel orders
-    }
+$need_cancel_order_buys = $halving->getNeedCancelOrderBuys($open_order_buys, $grid_buys);
+foreach ($need_cancel_order_buys as $need_cancel_order_buy) {
+    // cancel order buy
 }
 
 // get balances
 // get open orders
-// sort open orders
-rsort($grid_buys);
+$balance_total = $balances[$quote_asset]['total'];
+$count_real_orders_buy = count($grid_buys);
+$open_order_buys = $halving->getOpenOrderBuys($open_orders);
+$grid_status_buys = $halving->getGridStatusBuy($grid_buys, $open_order_buys, $count_real_orders_buy);
 
-$grid_status_buys = [];
-foreach ($grid_buys as $key => $grid_buy) {
-    $grid_status_buys[$key]['price'] = $grid_buy;
-    foreach ($open_order_buys as $open_order_buy) {
-        if (\Src\Math::compareFloats($open_order_buy['price'], $grid_buy)) {
-            $grid_status_buys[$key]['id'] = $open_order_buy['id'];
-            continue 2;
-        }
-    }
-    $grid_status_buys[$key]['id'] = '';
+foreach ($halving->needCancel($grid_status_buys) as $need_cancel) {
+    // cancel orders buy
 }
-
-$i = 1;
-foreach ($grid_status_buys as $key => $grid_buy) {
-    $grid_status_buys[$key]['need'] = ($i <= $count_real_orders_buy);
-    $i++;
-}
-
-foreach (array_filter($grid_status_buys, fn($grid_status_buy) => ($grid_status_buy['id'] && !$grid_status_buy['need'])) as $need_cancel) {
-    // cancel orders
-}
-
-foreach (array_filter($grid_status_buys, fn($grid_status_buy) => (!$grid_status_buy['id'] && $grid_status_buy['need'])) as $need_create) {
-    // create orders sell
+foreach ($halving->needCreate($grid_status_buys) as $need_create) {
+    // create orders buy
 }
 // [END] BUY POSITIONS
 
 // [START] SELL POSITIONS
-$count_real_orders_sell = \Src\Math::incrementNumber($balances[$base_asset]['total'] / $deal_amount, 1);
-$grid_sells = array_filter($grid, fn($g) => $g > $price);
-$open_order_sells = array_filter($open_orders, fn($open_order) => $open_order['side'] == 'sell' && $open_order['status'] == 'open');
-uasort($open_order_sells, fn($a, $b) => $a['price'] <=> $b['price']);
+$grid_sells = $halving->getGridSell($grid, $price);
+$balance_total = $balances[$base_asset]['total'];
+$count_real_orders_sell = count($grid_sells);
+$deal_amount_sell = $halving->getDealAmountSell($balance_total, $count_real_orders_sell);
+$open_order_sells = $halving->getOpenOrderSells($open_orders);
 
-foreach ($open_order_sells as $key => $open_order_sell) {
-    $is_in_grid = false;
-    foreach ($grid_buys as $grid_buy) {
-        if (\Src\Math::compareFloats($open_order_sell['price'], $grid_buy)) {
-            $is_in_grid = true;
-            break;
-        }
-    }
-    if (!$is_in_grid) {
-        // cancel orders
-    }
+$need_cancel_order_sells = $halving->getNeedCancelOrderSells($open_order_sells, $grid_sells);
+foreach ($need_cancel_order_sells as $need_cancel_order_sell) {
+    // cancel order
 }
 
 // get balances
 // get open orders
 // sort open orders
-sort($grid_sells);
 
-$grid_status_sells = [];
-foreach ($grid_sells as $key => $grid_buy) {
-    $grid_status_sells[$key]['price'] = $grid_buy;
-    foreach ($open_order_sells as $open_order_buy) {
-        if (\Src\Math::compareFloats($open_order_buy['price'], $grid_buy)) {
-            $grid_status_sells[$key]['id'] = $open_order_buy['id'];
-            continue 2;
-        }
-    }
-    $grid_status_sells[$key]['id'] = '';
+$balance_total = $balances[$base_asset]['total'];
+$count_real_orders_sell = count($grid_sells);
+$open_order_sells = $halving->getOpenOrderSells($open_orders);
+$grid_status_sells = $halving->getGridStatusSell($grid_sells, $open_order_sells, $count_real_orders_sell);
+
+foreach ($halving->needCancel($grid_status_sells) as $need_cancel) {
+    // cancel orders sell
 }
-
-$i = 1;
-foreach ($grid_status_sells as $key => $grid_buy) {
-    $grid_status_sells[$key]['need'] = ($i <= $count_real_orders_sell);
-    $i++;
-}
-
-foreach (array_filter($grid_status_buys, fn($grid_status_buy) => ($grid_status_buy['id'] && !$grid_status_buy['need'])) as $need_cancel) {
-    // cancel orders
-}
-
-foreach (array_filter($grid_status_buys, fn($grid_status_buy) => (!$grid_status_buy['id'] && $grid_status_buy['need'])) as $need_create) {
+foreach ($halving->needCreate($grid_status_sells) as $need_create) {
     // create orders sell
 }
-
 // [END] SELL POSITIONS
