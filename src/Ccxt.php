@@ -22,6 +22,20 @@ class Ccxt
         ]);
     }
 
+    public function getOrderbook(string $symbol, int $depth = 5): array
+    {
+        try {
+            $orderbook = $this->exchange->fetch_order_book($symbol, $depth);
+            unset($orderbook['nonce']);
+            unset($orderbook['info']);
+            unset($orderbook['datetime']);
+        } catch (Throwable $e) {
+            echo '[ERROR] fetch_order_book does not work. Error:' . $e->getMessage() . PHP_EOL;
+        }
+
+        return $orderbook ?? [];
+    }
+
     public function getOpenOrders(string $symbol = null): array
     {
         if ($this->exchange->has["fetchOpenOrders"] !== false) {

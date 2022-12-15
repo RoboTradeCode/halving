@@ -80,7 +80,7 @@ class Halving
                 }
             }
             if (!$is_in_grid)
-                $need_cancel_order_buys[] = $open_order_buy['id'];
+                $need_cancel_order_buys[] = $open_order_buy;
         }
         return $need_cancel_order_buys ?? [];
     }
@@ -96,7 +96,7 @@ class Halving
                 }
             }
             if (!$is_in_grid)
-                $need_cancel_order_sells[] = $open_order_sell['id'];
+                $need_cancel_order_sells[] = $open_order_sell;
         }
         return $need_cancel_order_sells ?? [];
     }
