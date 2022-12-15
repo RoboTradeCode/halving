@@ -40,14 +40,25 @@ class Ccxt
     {
         if ($this->exchange->has["fetchOpenOrders"] !== false) {
             try {
-                if ($symbol)
-                    return $this->exchange->fetch_open_orders($symbol);
-                return $this->exchange->fetch_open_orders();
+                $open_orders = ($symbol) ? $this->exchange->fetch_open_orders($symbol) : $this->exchange->fetch_open_orders();
+                foreach ($open_orders as $key => $open_order) {
+                    unset($open_orders[$key]['info']);
+                    unset($open_orders[$key]['clientOrderId']);
+                    unset($open_orders[$key]['lastTradeTimestamp']);
+                    unset($open_orders[$key]['timeInForce']);
+                    unset($open_orders[$key]['postOnly']);
+                    unset($open_orders[$key]['reduceOnly']);
+                    unset($open_orders[$key]['stopPrice']);
+                    unset($open_orders[$key]['cost']);
+                    unset($open_orders[$key]['average']);
+                    unset($open_orders[$key]['fee']);
+                    unset($open_orders[$key]['trades']);
+                }
             } catch (Throwable $e) {
                 echo "[INFO] fetch_open_orders does not work without a symbol. Error: " . $e->getMessage() . PHP_EOL;
             }
         }
-        return [];
+        return $open_orders ?? [];
     }
 
     public function getBalances(array $assets): array
@@ -83,7 +94,7 @@ class Ccxt
         return [];
     }
 
-    public function cancelAllOrder(string $symbol = null): array
+    public function cancelAllOrders(string $symbol = null): array
     {
         try {
             if ($open_orders = $this->getOpenOrders($symbol))
