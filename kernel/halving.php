@@ -18,14 +18,14 @@ list($base_asset, $quote_asset) = explode('/', $symbol);
 
 $bot = new Ccxt($exchange, $api_public, $api_secret);
 
-$halving = new Halving($low, $high, $count_of_orders, $bot->getMarketInfo($symbol));
+$halving = new Halving($bot->getMarketInfo($symbol));
 
-$grid = $halving->getGrid();
+$grid = $halving->getGrid($low, $high, $count_of_orders);
 
 $balances = $bot->getBalances([$base_asset, $quote_asset]);
 $open_orders = $bot->getOpenOrders($symbol);
-$orderbook = $bot->getOrderbook($symbol);
-$price = ($orderbook['bids'][0][0] + $orderbook['asks'][0][0]) / 2;
+
+$price = $halving->getPrice($bot->getOrderbook($symbol));
 
 // [START] BUY POSITIONS
 $grid_buys = $halving->getGridBuy($grid, $price);

@@ -6,7 +6,7 @@ class Halving
 {
     private array $market_info;
 
-    public function __construct(protected float $low, protected float $high, protected int $count_of_orders, array $full_market_info)
+    public function __construct(array $full_market_info)
     {
         $this->market_info = [
             'precision_amount' => $full_market_info['precision']['amount'],
@@ -19,16 +19,21 @@ class Halving
         ];
     }
 
-    public function getGrid(): array
+    public function getGrid(float $low, float $high, int $count_of_orders): array
     {
-        [$element, $grid, $i] = [$this->low, [], 0];
-        $step = round(($this->high - $this->low) / ($this->count_of_orders - 1), 8);
-        while ($element < $this->high && !Math::compareFloats($element, $this->high)) {
-            $element = Math::incrementNumber($this->low + $step * $i, $this->market_info['precision_price']);
+        [$element, $grid, $i] = [$low, [], 0];
+        $step = ($high - $low) / ($count_of_orders - 1);
+        while ($element < $high && !Math::compareFloats($element, $high)) {
+            $element = Math::incrementNumber($low + $step * $i, $this->market_info['precision_price']);
             $grid[] = $element;
             $i++;
         }
         return $grid;
+    }
+
+    public function getPrice(array $orderbook): float
+    {
+        return ($orderbook['bids'][0][0] + $orderbook['asks'][0][0]) / 2;
     }
 
     public function getGridBuy(array $grid, float $price): array
