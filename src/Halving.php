@@ -68,7 +68,7 @@ class Halving
         $open_orders = array_filter($open_orders, fn($open_order) => $open_order['side'] == $side && $open_order['status'] == 'open');
         [$grid_status, $i] = [[], 1];
         foreach ($grids as $key => $grid) {
-            $grid_status[$key] = ['price' => $grid, 'need' => ($i++ <= $count_real_orders)];
+            $grid_status[$key] = ['price' => $grid, 'need' => ($i++ <= $count_real_orders), 'side' => $side];
             foreach ($open_orders as $open_order) {
                 if (Math::compareFloats($open_order['price'], $grid)) {
                     $grid_status[$key]['id'] = $open_order['id'];
