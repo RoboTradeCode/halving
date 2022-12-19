@@ -80,7 +80,7 @@ while (true) {
             ':total_btc' => $total_btc,
             ':total_usd' => $total_usd,
             ':exchange' => $exchange_name,
-            ':instance' => 'spread_bot_php',
+            ':instance' => 'halving',
             ':algo' => 'halving',
             ':created' => date("Y-m-d H:i:s", time()),
         ];
