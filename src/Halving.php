@@ -36,31 +36,17 @@ class Halving
         return ($orderbook['bids'][0][0] + $orderbook['asks'][0][0]) / 2;
     }
 
-    public function getGridBuy(array $grid, float $price): array
+    public function getGridBySide(array $grid, float $price, string $side): array
     {
-        $grid_buys = array_filter($grid, fn($g) => $g < $price);
-        rsort($grid_buys);
-        return $grid_buys;
+        return ($side == 'buy') ? $this->getGridBuy($grid, $price) : $this->getGridSell($grid, $price);
     }
 
-    public function getGridSell(array $grid, float $price): array
+    public function getDealAmountBySide(float $balance_total, int $count_real_order_buys, float $price, string $side): float
     {
-        $grid_sells = array_filter($grid, fn($g) => $g > $price);
-        sort($grid_sells);
-        return $grid_sells;
+        return ($side == 'buy') ? $this->getDealAmountBuy($balance_total, $count_real_order_buys, $price) : $this->getDealAmountSell($balance_total, $count_real_order_buys);
     }
 
-    public function getDealAmountBuy(float $balance_total, int $count_real_order_buys, float $price): float
-    {
-        return Math::incrementNumber($balance_total / ($count_real_order_buys * $price), $this->market_info['precision_amount']);
-    }
-
-    public function getDealAmountSell(float $balance_total, int $count_real_order_sells): float
-    {
-        return Math::incrementNumber($balance_total / $count_real_order_sells, $this->market_info['precision_amount']);
-    }
-
-    public function getNeedCancelOrder(array $open_orders, array $grids): array
+    public function getNeedCancelOrders(array $open_orders, array $grids): array
     {
         $open_orders = array_filter($open_orders, fn($open_order) => $open_order['status'] == 'open');
         foreach ($open_orders as $open_order) {
@@ -77,30 +63,9 @@ class Halving
         return $need_cancel_order ?? [];
     }
 
-    public function getGridStatusBuy(array $grid_buys, array $open_orders, int $count_real_orders_buy): array
+    public function getGridStatusBySide(array $grids, array $open_orders, int $count_real_orders, string $side): array
     {
-        $open_order_buys = array_filter($open_orders, fn($open_order) => $open_order['side'] == 'buy' && $open_order['status'] == 'open');
-        return $this->getGridStatus($grid_buys, $open_order_buys, $count_real_orders_buy);
-    }
-
-    public function getGridStatusSell(array $grid_sells, array $open_orders, int $count_real_orders_sell): array
-    {
-        $open_order_sells = array_filter($open_orders, fn($open_order) => $open_order['side'] == 'sell' && $open_order['status'] == 'open');
-        return $this->getGridStatus($grid_sells, $open_order_sells, $count_real_orders_sell);
-    }
-
-    public function needCancel(array $grid_statuses): array
-    {
-        return array_filter($grid_statuses, fn($grid_status) => ($grid_status['id'] && !$grid_status['need']));
-    }
-
-    public function needCreate(array $grid_statuses): array
-    {
-        return array_filter($grid_statuses, fn($grid_status) => (!$grid_status['id'] && $grid_status['need']));
-    }
-
-    private function getGridStatus(array $grids, array $open_orders, int $count_real_orders): array
-    {
+        $open_orders = array_filter($open_orders, fn($open_order) => $open_order['side'] == $side && $open_order['status'] == 'open');
         [$grid_status, $i] = [[], 1];
         foreach ($grids as $key => $grid) {
             $grid_status[$key] = ['price' => $grid, 'need' => ($i++ <= $count_real_orders)];
@@ -113,5 +78,39 @@ class Halving
             $grid_status[$key]['id'] = '';
         }
         return $grid_status;
+    }
+
+    public function needCancel(array $grid_statuses): array
+    {
+        return array_filter($grid_statuses, fn($grid_status) => ($grid_status['id'] && !$grid_status['need']));
+    }
+
+    public function needCreate(array $grid_statuses): array
+    {
+        return array_filter($grid_statuses, fn($grid_status) => (!$grid_status['id'] && $grid_status['need']));
+    }
+
+    protected function getGridBuy(array $grid, float $price): array
+    {
+        $grid_buys = array_filter($grid, fn($g) => $g < $price);
+        rsort($grid_buys);
+        return $grid_buys;
+    }
+
+    protected function getGridSell(array $grid, float $price): array
+    {
+        $grid_sells = array_filter($grid, fn($g) => $g > $price);
+        sort($grid_sells);
+        return $grid_sells;
+    }
+
+    protected function getDealAmountBuy(float $balance_total, int $count_real_order_buys, float $price): float
+    {
+        return Math::incrementNumber($balance_total / ($count_real_order_buys * $price), $this->market_info['precision_amount']);
+    }
+
+    protected function getDealAmountSell(float $balance_total, int $count_real_order_sells): float
+    {
+        return Math::incrementNumber($balance_total / $count_real_order_sells, $this->market_info['precision_amount']);
     }
 }
