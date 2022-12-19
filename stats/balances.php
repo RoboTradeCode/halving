@@ -81,7 +81,7 @@ while (true) {
             ':total_usd' => $total_usd,
             ':exchange' => $exchange_name,
             ':instance' => 'spread_bot_php',
-            ':algo' => 'spread_bot_php',
+            ':algo' => 'halving',
             ':created' => date("Y-m-d H:i:s", time()),
         ];
 
