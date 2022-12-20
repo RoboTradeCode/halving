@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ae6609f3ab2be49b24b2e7ef529d17d4",
+    "content-hash": "0659361e1f95601e605ef94260abe41f",
     "packages": [
         {
             "name": "ccxt/ccxt",
@@ -1150,6 +1150,45 @@
                 }
             ],
             "time": "2022-12-09T07:31:23+00:00"
+        },
+        {
+            "name": "rawr/cross-data-providers",
+            "version": "v2.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/T-Regx/CrossDataProviders.git",
+                "reference": "987c6d434084bfad4866b702132f12f6f8e9b704"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/T-Regx/CrossDataProviders/zipball/987c6d434084bfad4866b702132f12f6f8e9b704",
+                "reference": "987c6d434084bfad4866b702132f12f6f8e9b704",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": "^8.0 || ^7.0"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.0",
+                "phpunit/phpunit": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "TRegx\\": "src/TRegx"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Allows you to use mix multiple PhpUnit @dataProvider without duplication",
+            "support": {
+                "issues": "https://github.com/T-Regx/CrossDataProviders/issues",
+                "source": "https://github.com/T-Regx/CrossDataProviders/tree/v2.3.0"
+            },
+            "time": "2020-11-11T23:14:16+00:00"
         },
         {
             "name": "sebastian/cli-parser",
