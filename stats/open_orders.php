@@ -54,10 +54,22 @@ while (true) {
         continue;
     }
 
+    $all_open_orders_sorted = [];
+
+    foreach ($all_open_orders as $key => $value) {
+        $all_open_orders_sorted[str_replace('.', '_', $value['price'])] = $value;
+    }
+
+    ksort($all_open_orders_sorted);
+
     /* Truncate open orders table */
     $db->query('TRUNCATE TABLE open_orders_all');
 
-    foreach ($all_open_orders as $order) {
+    $step = 0;
+
+    foreach ($all_open_orders_sorted as $order) {
+
+        $step++;
 
         $client_order_id = $order['id'] ?? null;
         $order_id = $order['id'] ?? null;
@@ -83,6 +95,7 @@ while (true) {
             ':exchange' => $exchange_name,
             ':instance' => 'halving',
             ':algo' => 'halving',
+            ':step' => $step,
             ':symbol' => $symbol,
             ':base_asset' => $base_asset,
             ':quote_asset' => $quote_asset,
@@ -102,7 +115,7 @@ while (true) {
         $stmt = $db->prepare(/** @lang sql */
             "INSERT INTO `open_orders_all` 
                         (event_id, client_order_id, exchange, instance, algo, expected_id, dom_position, step, order_id, symbol, base_asset, quote_asset, type, side, amount, btc_amount, usd_amount, filled, price, status, execution_time, repeats, sent, created) VALUES
-                        (:event_id, :client_order_id, :exchange, :instance, :algo, 0, 0, 0, :order_id, :symbol, :base_asset, :quote_asset, :type, :side, :amount, :btc_amount, :usd_amount, :filled, :price, :status, :execution_time, 0, :sent, :created)
+                        (:event_id, :client_order_id, :exchange, :instance, :algo, 0, 0, :step, :order_id, :symbol, :base_asset, :quote_asset, :type, :side, :amount, :btc_amount, :usd_amount, :filled, :price, :status, :execution_time, 0, :sent, :created)
                         ON DUPLICATE KEY UPDATE 
                         order_id = IF(status = 'open' OR order_id = '', VALUES(order_id), order_id),
                         symbol = IF(status = 'open' OR symbol = '', VALUES(symbol), symbol),
