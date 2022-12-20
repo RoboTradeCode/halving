@@ -10,13 +10,14 @@ use TRegx\DataProvider\DataProviders;
 
 class HalvingTest extends TestCase
 {
+    protected Ccxt $ccxt;
     protected Halving $halving;
 
     protected function setUp(): void
     {
-        $ccxt = $this->createMock(Ccxt::class);
-        $ccxt->expects($this->once())->method('getMarketInfo')->with('BTC/USDT')->willReturn(Binance::INFO_MARKETS['BTC/USDT']);
-        $this->halving = new Halving($ccxt->getMarketInfo('BTC/USDT'));
+        $this->ccxt = $this->createMock(Ccxt::class);
+        $this->ccxt->expects($this->once())->method('getMarketInfo')->with('BTC/USDT')->willReturn(Binance::INFO_MARKETS['BTC/USDT']);
+        $this->halving = new Halving($this->ccxt->getMarketInfo('BTC/USDT'));
     }
 
     /**
@@ -140,6 +141,110 @@ class HalvingTest extends TestCase
     {
         $need_cancel_orders = $this->halving->needCreate($grid_statuses);
         $this->assertEquals($expected, $need_cancel_orders);
+    }
+
+    /** @test */
+    public function it_cancel_unnecessary_open_orders()
+    {
+        $grid = [10000, 10500, 11000, 11500, 12000];
+        $symbol = 'BTC/USDT';
+        $this->ccxt->expects($this->once())->method('getOpenOrders')->with($symbol)->willReturn([
+            ['id' => 1, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 17000],
+            ['id' => 2, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 10000],
+            ['id' => 6, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 16000],
+            ['id' => 5, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 10500],
+            ['id' => 3, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 19000],
+            ['id' => 7, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 11000],
+            ['id' => 8, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 14000],
+            ['id' => 4, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 11500],
+            ['id' => 9, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 12000],
+            ['id' => 10, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'closed', 'price' => 9000]
+        ]);
+        $this->ccxt->expects($this->exactly(4))->method('cancelOrder')->withConsecutive([1, $symbol], [6, $symbol], [3, $symbol], [8, $symbol]);
+        $this->halving->cancelUnnecessaryOpenOrders($grid, $symbol, $this->ccxt);
+    }
+
+    /** @test */
+    public function it_get_grid_statuses_and_deal_amount_buy()
+    {
+        $grid = [10000, 10500, 11000, 11500, 12000];
+        $open_orders = [
+            ['id' => 1, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 10500],
+            ['id' => 2, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 11000],
+            ['id' => 6, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 11500]
+        ];
+        $quote_asset = 'USDT';
+        $balances = ['BTC' => ['free' => 1, 'used' => 0, 'total' => 1], 'USDT' => ['free' => 4000, 'used' => 6000, 'total' => 10000]];
+        $price = 12500;
+
+        $grid_status_buys_expected = [
+            ['price' => 12000, 'need' => true, 'id' => '', 'side' => 'buy'],
+            ['price' => 11500, 'need' => true, 'id' => 6, 'side' => 'buy'],
+            ['price' => 11000, 'need' => true, 'id' => 2, 'side' => 'buy'],
+            ['price' => 10500, 'need' => true, 'id' => 1, 'side' => 'buy'],
+            ['price' => 10000, 'need' => true, 'id' => '', 'side' => 'buy']
+        ];
+        $deal_amount_buy_expected = 0.15999;
+
+        [$grid_status_buys, $deal_amount_buy] = $this->halving->getGridStatusesAndDealAmount($grid, $open_orders, $balances[$quote_asset]['total'], $price, 'buy');
+
+        $this->assertEquals($grid_status_buys_expected, $grid_status_buys);
+        $this->assertEquals(round($deal_amount_buy_expected, 8), round($deal_amount_buy, 8));
+    }
+
+    /** @test */
+    public function it_get_grid_statuses_and_deal_amount_sell()
+    {
+        $grid = [10000, 10500, 11000, 11500, 12000];
+        $open_orders = [
+            ['id' => 1, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 10500],
+            ['id' => 2, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 11000],
+            ['id' => 6, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 11500]
+        ];
+        $base_asset = 'BTC';
+        $balances = ['BTC' => ['free' => 1, 'used' => 0, 'total' => 1], 'USDT' => ['free' => 4000, 'used' => 6000, 'total' => 10000]];
+        $price = 9500;
+
+        $grid_status_sells_expected = [
+            ['price' => 10000, 'need' => true, 'id' => '', 'side' => 'sell'],
+            ['price' => 10500, 'need' => true, 'id' => 1, 'side' => 'sell'],
+            ['price' => 11000, 'need' => true, 'id' => 2, 'side' => 'sell'],
+            ['price' => 11500, 'need' => true, 'id' => 6, 'side' => 'sell'],
+            ['price' => 12000, 'need' => true, 'id' => '', 'side' => 'sell']
+        ];
+        $deal_amount_sell_expected = 0.2;
+
+        [$grid_status_sells, $deal_amount_sell] = $this->halving->getGridStatusesAndDealAmount($grid, $open_orders, $balances[$base_asset]['total'], $price, 'sell');
+
+        $this->assertEquals($grid_status_sells_expected, $grid_status_sells);
+        $this->assertEquals(round($deal_amount_sell_expected, 8), round($deal_amount_sell, 8));
+    }
+
+    /** @test */
+    public function it_cancel_and_create_orders()
+    {
+        $grid_status_buys = [
+            ['price' => 11500, 'need' => true, 'id' => 5, 'side' => 'buy'],
+            ['price' => 11000, 'need' => true, 'id' => 4, 'side' => 'buy'],
+            ['price' => 10500, 'need' => true, 'id' => '', 'side' => 'buy'],
+            ['price' => 10000, 'need' => true, 'id' => '', 'side' => 'buy']
+        ];
+        $deal_amount_buy = 0.15;
+        $grid_status_sells = [
+            ['price' => 12000, 'need' => true, 'id' => '', 'side' => 'sell'],
+            ['price' => 12500, 'need' => true, 'id' => 1, 'side' => 'sell'],
+            ['price' => 13000, 'need' => true, 'id' => '', 'side' => 'sell'],
+            ['price' => 14500, 'need' => true, 'id' => 6, 'side' => 'sell'],
+            ['price' => 15000, 'need' => false, 'id' => 7, 'side' => 'sell']
+        ];
+        $deal_amount_sell = 0.2;
+        $symbol = 'BTC/USDT';
+
+        $this->ccxt->expects($this->once())->method('cancelOrder')->withConsecutive([7, $symbol]);
+        $this->ccxt->expects($this->exactly(4))->method('createOrder')
+            ->withConsecutive([$symbol, 'limit', 'buy', 0.15, 10500], [$symbol, 'limit', 'buy', 0.15, 10000], [$symbol, 'limit', 'sell', 0.2, 12000], [$symbol, 'limit', 'sell', 0.2, 13000], [$symbol, 'limit', 'sell', 0.2, 14500]);
+
+        $this->halving->cancelAndCreateOrders($grid_status_buys, $deal_amount_buy, $grid_status_sells, $deal_amount_sell, $symbol, $this->ccxt);
     }
 
     public function provideLowHighCount(): array

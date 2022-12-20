@@ -45,5 +45,5 @@ $price = $halving->getPrice($bot->getOrderbook($symbol));
 // [END] SELL POSITIONS
 
 // [START] CANCEL AND CREATE ORDERS
-$halving->cancelAndCreateOrders($grid_status_buys, $deal_amount_buy, $grid_status_sells, $deal_amount_sell, $bot);
+$halving->cancelAndCreateOrders($grid_status_buys, $deal_amount_buy, $grid_status_sells, $deal_amount_sell, $symbol, $bot);
 // [END] CANCEL AND CREATE ORDERS

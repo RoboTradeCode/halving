@@ -56,17 +56,17 @@ class Halving
         return [[], 0];
     }
 
-    public function cancelAndCreateOrders(array $grid_status_buys, float $deal_amount_buy, array $grid_status_sells, float $deal_amount_sell, Ccxt $bot): void
+    public function cancelAndCreateOrders(array $grid_status_buys, float $deal_amount_buy, array $grid_status_sells, float $deal_amount_sell, string $symbol, Ccxt $bot): void
     {
         $grid_statuses = array_merge($grid_status_buys, $grid_status_sells);
         foreach ($this->needCancel($grid_statuses) as $need_cancel) {
-            $bot->cancelOrder($need_cancel['id'], $need_cancel['symbol']);
+            $bot->cancelOrder($need_cancel['id'], $symbol);
             echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id'] . PHP_EOL;
         }
         foreach ($this->needCreate($grid_statuses) as $need_create) {
             $deal_amount = ($need_create['side'] == 'buy') ? $deal_amount_buy : $deal_amount_sell;
             if ($deal_amount > 0) {
-                $bot->createOrder($need_create['symbol'], 'limit', $need_create['side'], $deal_amount, $need_create['price']);
+                $bot->createOrder($symbol, 'limit', $need_create['side'], $deal_amount, $need_create['price']);
                 echo '[' . date('Y-m-d H:i:s') . '] [' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount . PHP_EOL;
             } else {
                 echo '[' . date('Y-m-d H:i:s') . '] [WARNING] Deal amount is zero' . PHP_EOL;
