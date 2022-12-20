@@ -31,9 +31,47 @@ class Halving
         return $grid;
     }
 
+    public function cancelUnnecessaryOpenOrders(array $grid, string $symbol, Ccxt $bot): void
+    {
+        foreach ($this->getNeedCancelOrders($bot->getOpenOrders($symbol), $grid) as $need_cancel_order_buy) {
+            $bot->cancelOrder($need_cancel_order_buy['id'], $need_cancel_order_buy['symbol']);
+            echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price'] . PHP_EOL;
+        }
+    }
+
     public function getPrice(array $orderbook): float
     {
         return ($orderbook['bids'][0][0] + $orderbook['asks'][0][0]) / 2;
+    }
+
+    public function getGridStatusesAndDealAmount(array $grid, array $open_orders, float $balance_total, float $price, string $side): array
+    {
+        $grid_by_side = $this->getGridBySide($grid, $price, $side);
+        $count_real_orders = count($grid_by_side);
+        if ($count_real_orders > 0) {
+            $grid_status = $this->getGridStatusBySide($grid_by_side, $open_orders, $count_real_orders, $side);
+            $deal_amount = $this->getDealAmountBySide($balance_total, $count_real_orders, $price, $side);
+            return [$grid_status, $deal_amount];
+        }
+        return [[], 0];
+    }
+
+    public function cancelAndCreateOrders(array $grid_status_buys, float $deal_amount_buy, array $grid_status_sells, float $deal_amount_sell, Ccxt $bot): void
+    {
+        $grid_statuses = array_merge($grid_status_buys, $grid_status_sells);
+        foreach ($this->needCancel($grid_statuses) as $need_cancel) {
+            $bot->cancelOrder($need_cancel['id'], $need_cancel['symbol']);
+            echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id'] . PHP_EOL;
+        }
+        foreach ($this->needCreate($grid_statuses) as $need_create) {
+            $deal_amount = ($need_create['side'] == 'buy') ? $deal_amount_buy : $deal_amount_sell;
+            if ($deal_amount > 0) {
+                $bot->createOrder($need_create['symbol'], 'limit', $need_create['side'], $deal_amount, $need_create['price']);
+                echo '[' . date('Y-m-d H:i:s') . '] [' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount . PHP_EOL;
+            } else {
+                echo '[' . date('Y-m-d H:i:s') . '] [WARNING] Deal amount is zero' . PHP_EOL;
+            }
+        }
     }
 
     public function getGridBySide(array $grid, float $price, string $side): array

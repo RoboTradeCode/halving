@@ -38,7 +38,8 @@ class HalvingTest extends TestCase
      */
     public function it_get_correct_price($bid, $ask)
     {
-        $this->assertEquals(($bid + $ask) / 2, $this->halving->getPrice(['bids' => [[$bid, 0]], 'asks' => [[$ask, 0]]]));
+        $price = $this->halving->getPrice(['bids' => [[$bid, 0]], 'asks' => [[$ask, 0]]]);
+        $this->assertEquals(($bid + $ask) / 2, $price);
     }
 
     /**
