@@ -35,7 +35,10 @@ class Halving
     {
         foreach ($this->getNeedCancelOrders($bot->getOpenOrders($symbol), $grid) as $need_cancel_order_buy) {
             $bot->cancelOrder($need_cancel_order_buy['id'], $need_cancel_order_buy['symbol']);
-            echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price'] . PHP_EOL;
+
+            $msg = '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price'];
+            Log::log($msg);
+            echo $msg . PHP_EOL;
         }
     }
 
@@ -61,16 +64,22 @@ class Halving
         $grid_statuses = array_merge($grid_status_buys, $grid_status_sells);
         foreach ($this->needCancel($grid_statuses) as $need_cancel) {
             $bot->cancelOrder($need_cancel['id'], $symbol);
-            echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id'] . PHP_EOL;
+
+            $msg = '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id'];
+            Log::log($msg);
+            echo $msg . PHP_EOL;
         }
         foreach ($this->needCreate($grid_statuses) as $need_create) {
             $deal_amount = ($need_create['side'] == 'buy') ? $deal_amount_buy : $deal_amount_sell;
             if ($deal_amount > 0) {
-                $bot->createOrder($symbol, 'limit', $need_create['side'], $deal_amount, $need_create['price']);
-                echo '[' . date('Y-m-d H:i:s') . '] [' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount . PHP_EOL;
+                $bot->createOrder($symbol, 'limit', $need_create['side'], round($deal_amount, 8), $need_create['price']);
+
+                $msg = '[' . date('Y-m-d H:i:s') . '] [' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount;
             } else {
-                echo '[' . date('Y-m-d H:i:s') . '] [WARNING] Deal amount is zero' . PHP_EOL;
+                $msg = '[' . date('Y-m-d H:i:s') . '] [WARNING] Deal amount is zero';
             }
+            Log::log($msg);
+            echo $msg . PHP_EOL;
         }
     }
 
