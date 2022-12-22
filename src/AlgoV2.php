@@ -2,7 +2,7 @@
 
 namespace Src;
 
-class Algo
+class AlgoV2
 {
     public function __construct(
         protected Ccxt $bot,
@@ -34,20 +34,20 @@ class Algo
         // [END] REQUESTS TO EXCHANGE
 
         // [START] BUY POSITIONS
-        [$grid_status_buys, $deal_amount_buy] = $halving->getGridStatusesAndDealAmount($grid, $open_orders, $balances[$quote_asset]['total'], $price, 'buy');
+        $grid_status_buys = $halving->getGridStatusesAndDealAmount($grid, $open_orders, $balances[$quote_asset]['free'], $price, 'buy');
         // [END] BUY POSITIONS
 
         // [START] SELL POSITIONS
-        [$grid_status_sells, $deal_amount_sell] = $halving->getGridStatusesAndDealAmount($grid, $open_orders, $balances[$base_asset]['total'], $price, 'sell');
+        $grid_status_sells = $halving->getGridStatusesAndDealAmount($grid, $open_orders, $balances[$base_asset]['free'], $price, 'sell');
         // [END] SELL POSITIONS
 
         // [START] CANCEL AND CREATE ORDERS
-        $halving->cancelAndCreateOrders($grid_status_buys, $deal_amount_buy, $grid_status_sells, $deal_amount_sell, $this->symbol, $this->bot);
+        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot);
         // [END] CANCEL AND CREATE ORDERS
     }
 
-    protected function createHalving(): Halving
+    protected function createHalving(): HalvingV2
     {
-        return new Halving($this->bot->getMarketInfo($this->symbol));
+        return new HalvingV2($this->bot->getMarketInfo($this->symbol));
     }
 }

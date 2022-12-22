@@ -1,6 +1,6 @@
 <?php
 
-use Src\Algo;
+use Src\AlgoV2;
 use Src\Ccxt;
 use Src\DB;
 
@@ -30,5 +30,5 @@ $high = 20000;
 $count_of_orders = 50;
 // [END] CONFIGURATIONS
 
-$algo = new Algo(new Ccxt($exchange, $api_public, $api_secret), $symbol, $low, $high, $count_of_orders);
+$algo = new AlgoV2(new Ccxt($exchange, $api_public, $api_secret), $symbol, $low, $high, $count_of_orders);
 $algo->run();

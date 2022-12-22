@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Mockery;
 use Src\Algo;
 use PHPUnit\Framework\TestCase;
 use Src\Ccxt;
@@ -62,7 +63,7 @@ class AlgoTest extends TestCase
         $this->ccxt->expects($this->exactly(4))->method('createOrder')
             ->withConsecutive([$symbol, 'limit', 'buy', 0.33333, 12500], [$symbol, 'limit', 'buy', 0.33333, 10000], [$symbol, 'limit', 'sell', 0.49999, 17500], [$symbol, 'limit', 'sell', 0.49999, 20000]);
 
-        $algo = new Algo($this->ccxt, $symbol, $low, $high, $count_of_orders);
+        $algo = $this->getAlgo($symbol, $low, $high, $count_of_orders);
         $algo->run();
     }
 
@@ -97,7 +98,18 @@ class AlgoTest extends TestCase
         $this->ccxt->expects($this->exactly(4))->method('createOrder')
             ->withConsecutive([$symbol, 'limit', 'buy', 0.33333, 12500], [$symbol, 'limit', 'buy', 0.33333, 10000], [$symbol, 'limit', 'sell', 0.49999, 17500], [$symbol, 'limit', 'sell', 0.49999, 20000]);
 
-        $algo = new Algo($this->ccxt, $symbol, $low, $high, $count_of_orders);
+        $algo = $this->getAlgo($symbol, $low, $high, $count_of_orders);
         $algo->run();
+    }
+
+    protected function getAlgo($symbol, $low, $high, $count_of_orders): array|Mockery\Mock|Algo
+    {
+        $halving = Mockery::mock(Halving::class, [$this->ccxt->getMarketInfo('BTC/USDT')])->makePartial();
+        $halving->shouldAllowMockingProtectedMethods()->shouldReceive('log');
+
+        $algo = Mockery::mock(Algo::class, [$this->ccxt, $symbol, $low, $high, $count_of_orders])->makePartial();
+        $algo->shouldAllowMockingProtectedMethods()->shouldReceive('createHalving')->andReturn($halving);
+
+        return $algo;
     }
 }

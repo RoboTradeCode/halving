@@ -4,7 +4,7 @@ namespace Src;
 
 class Halving
 {
-    private array $market_info;
+    protected array $market_info;
 
     public function __construct(array $full_market_info)
     {
