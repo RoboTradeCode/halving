@@ -36,9 +36,7 @@ class Halving
         foreach ($this->getNeedCancelOrders($bot->getOpenOrders($symbol), $grid) as $need_cancel_order_buy) {
             $bot->cancelOrder($need_cancel_order_buy['id'], $need_cancel_order_buy['symbol']);
 
-            $msg = '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price'];
-            Log::log($msg);
-            echo $msg . PHP_EOL;
+            $this->log('[' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price']);
         }
     }
 
@@ -65,21 +63,18 @@ class Halving
         foreach ($this->needCancel($grid_statuses) as $need_cancel) {
             $bot->cancelOrder($need_cancel['id'], $symbol);
 
-            $msg = '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id'];
-            Log::log($msg);
-            echo $msg . PHP_EOL;
+            $this->log('[' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id']);
         }
         foreach ($this->needCreate($grid_statuses) as $need_create) {
             $deal_amount = ($need_create['side'] == 'buy') ? $deal_amount_buy : $deal_amount_sell;
             if ($deal_amount > 0) {
                 $bot->createOrder($symbol, 'limit', $need_create['side'], round($deal_amount, 8), $need_create['price']);
 
-                $msg = '[' . date('Y-m-d H:i:s') . '] [' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount;
+                $msg = '[' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount;
             } else {
-                $msg = '[' . date('Y-m-d H:i:s') . '] [WARNING] Deal amount is zero';
+                $msg = '[WARNING] Deal amount is zero';
             }
-            Log::log($msg);
-            echo $msg . PHP_EOL;
+            $this->log($msg);
         }
     }
 
@@ -159,5 +154,12 @@ class Halving
     protected function getDealAmountSell(float $balance_total, int $count_real_order_sells): float
     {
         return Math::incrementNumber($balance_total / $count_real_order_sells, $this->market_info['precision_amount']);
+    }
+
+    protected function log(string $msg): void
+    {
+        $msg .= '[' . date('Y-m-d H:i:s') . '] ';
+        Log::log($msg);
+        echo $msg . PHP_EOL;
     }
 }
