@@ -4,7 +4,7 @@ namespace Src;
 
 class Halving
 {
-    private array $market_info;
+    protected array $market_info;
 
     public function __construct(array $full_market_info)
     {
@@ -35,7 +35,8 @@ class Halving
     {
         foreach ($this->getNeedCancelOrders($bot->getOpenOrders($symbol), $grid) as $need_cancel_order_buy) {
             $bot->cancelOrder($need_cancel_order_buy['id'], $need_cancel_order_buy['symbol']);
-            echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price'] . PHP_EOL;
+
+            $this->log('[' . $need_cancel_order_buy['side'] . '] Cancel order: ' . $need_cancel_order_buy['id'] . ', ' . $need_cancel_order_buy['price']);
         }
     }
 
@@ -61,16 +62,19 @@ class Halving
         $grid_statuses = array_merge($grid_status_buys, $grid_status_sells);
         foreach ($this->needCancel($grid_statuses) as $need_cancel) {
             $bot->cancelOrder($need_cancel['id'], $symbol);
-            echo '[' . date('Y-m-d H:i:s') . '] [' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id'] . PHP_EOL;
+
+            $this->log('[' . $need_cancel['side'] . '] Cancel order: ' . $need_cancel['id']);
         }
         foreach ($this->needCreate($grid_statuses) as $need_create) {
             $deal_amount = ($need_create['side'] == 'buy') ? $deal_amount_buy : $deal_amount_sell;
             if ($deal_amount > 0) {
-                $bot->createOrder($symbol, 'limit', $need_create['side'], $deal_amount, $need_create['price']);
-                echo '[' . date('Y-m-d H:i:s') . '] [' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount . PHP_EOL;
+                $bot->createOrder($symbol, 'limit', $need_create['side'], round($deal_amount, 8), $need_create['price']);
+
+                $msg = '[' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $deal_amount;
             } else {
-                echo '[' . date('Y-m-d H:i:s') . '] [WARNING] Deal amount is zero' . PHP_EOL;
+                $msg = '[WARNING] Deal amount is zero';
             }
+            $this->log($msg);
         }
     }
 
@@ -150,5 +154,12 @@ class Halving
     protected function getDealAmountSell(float $balance_total, int $count_real_order_sells): float
     {
         return Math::incrementNumber($balance_total / $count_real_order_sells, $this->market_info['precision_amount']);
+    }
+
+    protected function log(string $msg): void
+    {
+        $msg .= '[' . date('Y-m-d H:i:s') . '] ';
+        Log::log($msg);
+        echo $msg . PHP_EOL;
     }
 }

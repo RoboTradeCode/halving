@@ -5,7 +5,6 @@ namespace Src;
 use ccxt\Exchange;
 use Exception;
 use Src\Data\Binance;
-use Throwable;
 
 class Ccxt
 {
@@ -29,7 +28,8 @@ class Ccxt
             unset($orderbook['nonce']);
             unset($orderbook['info']);
             unset($orderbook['datetime']);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
+            Log::error($e, ['$symbol' => $symbol, '$depth' => $depth]);
             echo '[ERROR] fetch_order_book does not work. Error:' . $e->getMessage() . PHP_EOL;
         }
 
@@ -54,7 +54,8 @@ class Ccxt
                     unset($open_orders[$key]['fee']);
                     unset($open_orders[$key]['trades']);
                 }
-            } catch (Throwable $e) {
+            } catch (Exception $e) {
+                Log::error($e, ['$symbol' => $symbol]);
                 echo "[INFO] fetch_open_orders does not work without a symbol. Error: " . $e->getMessage() . PHP_EOL;
             }
         }
@@ -68,7 +69,8 @@ class Ccxt
 
             foreach ($assets as $asset)
                 $balances[$asset] = $all_balances[$asset] ?? ["free" => 0, "used" => 0, "total" => 0];
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
+            Log::error($e, ['$assets' => $assets]);
             echo '[ERROR] ' . $e->getMessage() . PHP_EOL;
         }
         return $balances ?? [];
@@ -78,7 +80,8 @@ class Ccxt
     {
         try {
             $order = $this->exchange->create_order($symbol, $type, $side, $amount, $price);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
+            Log::error($e, ['$symbol' => $symbol, '$type' => $type, '$side' => $side, '$amount' => $amount, '$price' => $price]);
             echo '[ERROR] ' . $e->getMessage() . PHP_EOL;
         }
         return $order ?? [];
@@ -89,6 +92,7 @@ class Ccxt
         try {
             return $this->exchange->cancel_order($order_id, $symbol);
         } catch (Exception $e) {
+            Log::error($e, ['$order_id' => $order_id, '$symbol' => $symbol]);
             echo '[ERROR] ' . $e->getMessage() . PHP_EOL;
         }
         return [];
@@ -101,6 +105,7 @@ class Ccxt
                 foreach ($open_orders as $open_order)
                     $this->exchange->cancel_order($open_order['id'], $open_order['symbol']);
         } catch (Exception $e) {
+            Log::error($e, ['$symbol' => $symbol]);
             echo '[ERROR] ' . $e->getMessage() . PHP_EOL;
         }
         return [];

@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Mockery;
 use PHPUnit\Framework\TestCase;
 use Src\Ccxt;
 use Src\Data\Binance;
@@ -17,7 +18,9 @@ class HalvingTest extends TestCase
     {
         $this->ccxt = $this->createMock(Ccxt::class);
         $this->ccxt->expects($this->once())->method('getMarketInfo')->with('BTC/USDT')->willReturn(Binance::INFO_MARKETS['BTC/USDT']);
-        $this->halving = new Halving($this->ccxt->getMarketInfo('BTC/USDT'));
+
+        $this->halving = Mockery::mock(Halving::class, [$this->ccxt->getMarketInfo('BTC/USDT')])->makePartial();
+        $this->halving->shouldAllowMockingProtectedMethods()->shouldReceive('log');
     }
 
     /**
