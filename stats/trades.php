@@ -26,11 +26,17 @@ while (true) {
     try {
         $rates = [];
 
-        $sth = $db->prepare("SELECT asset, btc, usd FROM `rates`");
-        $sth->execute();
+        try {
+            $sth = $db->prepare("SELECT asset, btc, usd FROM `rates`");
+            $sth->execute();
 
-        foreach ($sth->fetchAll(PDO::FETCH_ASSOC) as $rate) {
-            $rates[$rate['asset']] = ['BTC' => $rate['btc'], 'USD' => $rate['usd']];
+            foreach ($sth->fetchAll(PDO::FETCH_ASSOC) as $rate) {
+                $rates[$rate['asset']] = ['BTC' => $rate['btc'], 'USD' => $rate['usd']];
+            }
+        } catch (PDOException $e) {
+            echo "[ERROR] Failed to get rates from DB, restart after 5 seconds...";
+            sleep(5);
+            die();
         }
 
     } catch (PDOException $e) {
