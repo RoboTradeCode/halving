@@ -42,18 +42,15 @@ class HalvingV2 extends Halving
         return Math::incrementNumber($balance, $this->market_info['precision_amount']);
     }
 
-    public function cancelAndCreateOrdersV2(array $grid_status_buys, array $grid_status_sells, string $symbol, Ccxt $bot): void
+    public function cancelAndCreateOrdersV2(array $grid_status_buys, array $grid_status_sells, string $symbol, Ccxt $bot, float $min_deal_amount): void
     {
         foreach (array_merge($grid_status_buys, $grid_status_sells) as $need_create) {
             if ($need_create['need']) {
-                if ($need_create['amount'] > 0) {
+                if ($need_create['amount'] > $min_deal_amount) {
                     $bot->createOrder($symbol, 'limit', $need_create['side'], round($need_create['amount'], 8), $need_create['price']);
 
-                    $msg = '[' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $need_create['amount'];
-                } else {
-                    $msg = '[WARNING] Deal amount is zero';
+                    $this->log('[' . $need_create['side'] . '] Create order: ' . $need_create['price'] . ', ' . $need_create['amount']);
                 }
-                $this->log($msg);
             }
         }
     }

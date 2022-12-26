@@ -9,7 +9,8 @@ class AlgoV2
         protected string $symbol,
         protected float $low,
         protected float $high,
-        protected int $count_of_orders
+        protected int $count_of_orders,
+        protected float $min_deal_amount = 20
     ) {}
 
     public function run(): void
@@ -42,7 +43,7 @@ class AlgoV2
         // [END] SELL POSITIONS
 
         // [START] CANCEL AND CREATE ORDERS
-        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot);
+        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot, $this->min_deal_amount / $price);
         // [END] CANCEL AND CREATE ORDERS
     }
 

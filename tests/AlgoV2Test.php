@@ -183,6 +183,39 @@ class AlgoV2Test extends TestCase
         $algo->run();
     }
 
+    /** @test */
+    public function run_algorithm_with_not_enough_balance()
+    {
+        $symbol = 'BTC/USDT';
+        $low = 10000;
+        $high = 20000;
+        $count_of_orders = 5;
+        $open_orders = [
+            ['id' => 2, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 17500],
+            ['id' => 3, 'symbol' => 'BTC/USDT', 'side' => 'sell', 'status' => 'open', 'price' => 20000]
+        ];
+
+        $this->ccxt->expects($this->exactly(2))->method('getOpenOrders')
+            ->withConsecutive([$symbol], [$symbol])
+            ->willReturnOnConsecutiveCalls($open_orders, $open_orders);
+
+        $this->ccxt->expects($this->never())->method('cancelOrder');
+
+        $this->ccxt->expects($this->once())->method('getBalances')
+            ->with(explode('/', $symbol))
+            ->willReturn(['BTC' => ['free' => 0.0001, 'used' => 0.99998, 'total' => 1.00008], 'USDT' => ['free' => 0, 'used' => 0, 'total' => 0]]);
+
+        $this->ccxt->expects($this->once())->method('getOrderbook')
+            ->with($symbol)
+            ->willReturn(['bids' => [[8900, 0.1], [8800, 0.2]], 'asks' => [[9100, 0.15], [9200, 0.4]]]);
+
+        $this->ccxt->expects($this->never())->method('createOrder')
+            ->withConsecutive();
+
+        $algo = $this->getAlgo($symbol, $low, $high, $count_of_orders);
+        $algo->run();
+    }
+
     protected function getAlgo($symbol, $low, $high, $count_of_orders): array|Mockery\Mock|AlgoV2
     {
         $halving = Mockery::mock(HalvingV2::class, [$this->ccxt->getMarketInfo('BTC/USDT')])->makePartial();
