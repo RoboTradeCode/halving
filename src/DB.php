@@ -29,14 +29,14 @@ class DB
         self::$connect = $dbh;
     }
 
-    public static function getConfig(mixed $user_id = 1)
+    public static function getConfig(mixed $userid = 1)
     {
         $query = sprintf(
-        /** @lang sql */ 'SELECT %s FROM `config` WHERE user_id = :user_id',
-            implode('`, `', ['api_public', 'api_secret', 'exchange', 'symbol', 'low', 'high', 'count_of_orders'])
+        /** @lang sql */ 'SELECT %s FROM `configs` WHERE id = :id AND userid = :userid',
+            '`' . implode('`, `', ['exchange', 'symbol', 'low', 'high', 'order_count', 'api_key', 'api_secret']) . '`'
         );
         $sth = self::$connect->prepare($query);
-        $sth->execute(['user_id' => $user_id]);
+        $sth->execute(['id' => 1, 'userid' => $userid]);
         return $sth->fetch();
     }
 
