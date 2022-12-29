@@ -31,6 +31,7 @@ class AlgoV2
         // [START] REQUESTS TO EXCHANGE
         $balances = $this->bot->getBalances([$base_asset, $quote_asset]);
         $open_orders = $this->bot->getOpenOrders($this->symbol);
+        $my_trades = $this->bot->getMyTrades();
         $price = $halving->getPrice($this->bot->getOrderbook($this->symbol));
         // [END] REQUESTS TO EXCHANGE
 
@@ -43,7 +44,7 @@ class AlgoV2
         // [END] SELL POSITIONS
 
         // [START] CANCEL AND CREATE ORDERS
-        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot, $this->min_deal_amount / $price);
+        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot, $this->min_deal_amount / $price, $my_trades);
         // [END] CANCEL AND CREATE ORDERS
     }
 

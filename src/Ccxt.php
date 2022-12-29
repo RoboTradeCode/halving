@@ -76,6 +76,18 @@ class Ccxt
         return $balances ?? [];
     }
 
+    public function getMyTrades(string $symbol = 'BTC/USDT', int $limit = 1): array
+    {
+        try {
+            return $this->exchange->fetch_my_trades($symbol, limit: $limit);
+        } catch (Exception $e) {
+            Log::error($e, ['$symbol' => $symbol]);
+            echo "[INFO] getMyTrade does not work. Error: " . $e->getMessage() . PHP_EOL;
+        }
+
+        return [];
+    }
+
     public function createOrder(string $symbol, string $type, string $side, float $amount, float $price = null): array
     {
         try {
