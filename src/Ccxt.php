@@ -8,7 +8,7 @@ use Src\Data\Binance;
 
 class Ccxt
 {
-    protected Exchange $exchange;
+    protected Exchange|\ccxt\binance $exchange;
 
     public function __construct($exchange_name, $api_public = '', $api_secret = '', $enableRateLimit = true)
     {

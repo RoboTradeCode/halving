@@ -47,6 +47,11 @@ class AlgoV2
         // [END] CANCEL AND CREATE ORDERS
     }
 
+    public function stop(): void
+    {
+        $this->bot->cancelAllOrders($this->symbol);
+    }
+
     protected function createHalving(): HalvingV2
     {
         return new HalvingV2($this->bot->getMarketInfo($this->symbol));

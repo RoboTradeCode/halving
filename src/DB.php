@@ -33,7 +33,7 @@ class DB
     {
         $query = sprintf(
         /** @lang sql */ 'SELECT %s FROM `configs` WHERE id = :id AND userid = :userid',
-            '`' . implode('`, `', ['exchange', 'symbol', 'low', 'high', 'order_count', 'api_key', 'api_secret']) . '`'
+            '`' . implode('`, `', ['exchange', 'symbol', 'low', 'high', 'order_count', 'is_launched', 'api_key', 'api_secret']) . '`'
         );
         $sth = self::$connect->prepare($query);
         $sth->execute(['id' => 1, 'userid' => $userid]);
