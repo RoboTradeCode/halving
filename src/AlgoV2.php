@@ -44,7 +44,7 @@ class AlgoV2
         // [END] SELL POSITIONS
 
         // [START] CANCEL AND CREATE ORDERS
-        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot, $this->min_deal_amount / $price, $my_trades);
+        $halving->cancelAndCreateOrdersV2($grid_status_buys, $grid_status_sells, $this->symbol, $this->bot, $this->min_deal_amount, $balances, $my_trades);
         // [END] CANCEL AND CREATE ORDERS
     }
 

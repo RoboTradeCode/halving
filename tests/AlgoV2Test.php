@@ -272,6 +272,41 @@ class AlgoV2Test extends TestCase
         $algo->run();
     }
 
+    /** @test */
+    public function run_algorithm_with_free_balances_only_on_min_deal_amount()
+    {
+        $symbol = 'BTC/USDT';
+        $low = 10000;
+        $high = 20000;
+        $count_of_orders = 5;
+        $open_orders = [
+            ['id' => 1, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 10000],
+            ['id' => 2, 'symbol' => 'BTC/USDT', 'side' => 'buy', 'status' => 'open', 'price' => 12500]
+        ];
+
+        $this->ccxt->expects($this->exactly(2))->method('getOpenOrders')
+            ->withConsecutive([$symbol], [$symbol])
+            ->willReturnOnConsecutiveCalls($open_orders, $open_orders);
+
+        $this->ccxt->expects($this->never())->method('cancelOrder');
+
+        $this->ccxt->expects($this->once())->method('getBalances')
+            ->with(explode('/', $symbol))
+            ->willReturn(['BTC' => ['free' => 0.00002, 'used' => 0.99998, 'total' => 0.00002], 'USDT' => ['free' => 50, 'used' => 10000, 'total' => 10050]]);
+
+        $this->ccxt->expects($this->once())->method('getOrderbook')
+            ->with($symbol)
+            ->willReturn(['bids' => [[20900, 0.1], [14800, 0.2]], 'asks' => [[21100, 0.15], [15200, 0.4]]]);
+
+        $this->ccxt->expects($this->once())->method('getMyTrades')->willReturnOnConsecutiveCalls([]);
+
+        $this->ccxt->expects($this->exactly(2))->method('createOrder')
+            ->withConsecutive([$symbol, 'limit', 'buy', 0.001, 20000], [$symbol, 'limit', 'buy', 0.00114, 17500]);
+
+        $algo = $this->getAlgo($symbol, $low, $high, $count_of_orders);
+        $algo->run();
+    }
+
     protected function getAlgo($symbol, $low, $high, $count_of_orders): array|Mockery\Mock|AlgoV2
     {
         $halving = Mockery::mock(HalvingV2::class, [$this->ccxt->getMarketInfo('BTC/USDT')])->makePartial();
